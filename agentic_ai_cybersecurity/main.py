@@ -250,4 +250,4 @@ responder.execute(decisions)
 # ================================
 # END
 # ================================
-print("\n🚀 Pipeline execution completed")
+print("\nPipeline execution completed")
