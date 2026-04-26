@@ -26,6 +26,8 @@ from agents.coordinator_agent import CoordinatorAgent
 from agents.response_agent import ResponseAgent
 from agents.anomaly_agent import AnomalyAgent
 
+from utils.memory import AgentMemory
+
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import classification_report, confusion_matrix, ConfusionMatrixDisplay
 from sklearn.metrics import precision_recall_curve
@@ -71,6 +73,12 @@ X_train, X_test, y_train, y_test = train_test_split(
 
 print("Split complete")
 
+# 🔥 SAVE TEST DATA FOR REAL-TIME STREAMING (IMPORTANT)
+pd.DataFrame(X_test).to_csv("outputs/test_stream.csv", index=False)
+pd.DataFrame(y_test).to_csv("outputs/test_labels.csv", index=False)
+
+print("✅ Test stream data saved for dashboard")
+
 # ================================
 # SCALE
 # ================================
@@ -88,6 +96,14 @@ X_test = selector.transform(X_test)
 # 🔥 SAVE PREPROCESSING (IMPORTANT)
 joblib.dump(scaler, "outputs/models/scaler.pkl")
 joblib.dump(selector, "outputs/models/selector.pkl")
+
+# ================================
+# SAVE FEATURE NAMES (VERY IMPORTANT)
+# ================================
+feature_names = [f"f{i}" for i in range(X_train.shape[1])]
+joblib.dump(feature_names, "outputs/models/feature_names.pkl")
+
+print(f"✅ Saved {len(feature_names)} feature names")
 
 # ================================
 # STEP 3: BALANCE DATA
@@ -111,13 +127,17 @@ anomaly.save("outputs/models/anomaly_model.pkl")
 
 print("Anomaly model trained & saved")
 
+
 # ================================
 # STEP 5: INITIALIZE AGENTS
 # ================================
+memory = AgentMemory()   # 🔥 ADD THIS
+
 detector = DetectionAgent()
 ueba = UEBAAgent()
 investigator = InvestigationAgent()
-coordinator = CoordinatorAgent()
+
+coordinator = CoordinatorAgent(memory)   # 🔥 FIXED
 responder = ResponseAgent()
 
 # ================================
@@ -205,40 +225,49 @@ test_data = pd.concat([
     pd.DataFrame(normal_samples)
 ])
 
-#FIXED (NO .values)
+# Network
 test_probs = detector.predict_proba(test_data)
 net_alerts = (test_probs >= best_threshold).astype(int)
 
+# Fraud
 fraud_alerts = ueba.detect(X_fraud.sample(len(test_data)))
 
+# ================================
+# TRANSFORMER (CLEAN)
+# ================================
+log_sample = logs.sample(len(test_data), replace=True)
+
 try:
-    log_alerts = investigator.analyze(logs.head(len(test_data)))
-except:
-    print("⚠️ Transformer skipped")
+    log_alerts = investigator.analyze(log_sample)
+except Exception as e:
+    print("⚠️ Transformer error:", e)
     log_alerts = np.zeros(len(test_data))
 
-#FIXED
+# ================================
+# ANOMALY
+# ================================
 anomaly_alerts = anomaly.detect(test_data)
 
 # ================================
-# STEP 10: FINAL DECISION
+# STEP 10: FINAL DECISION (AGENTIC)
 # ================================
 print_section("Final Decision Engine")
 
-min_len = min(len(net_alerts), len(fraud_alerts), len(log_alerts))
+min_len = min(len(net_alerts), len(fraud_alerts), len(log_alerts), len(anomaly_alerts))
 
-final_alerts = []
+inputs = []
 
 for i in range(min_len):
-    votes = (
-        net_alerts[i] +
-        fraud_alerts[i] +
-        log_alerts[i] +
-        anomaly_alerts[i]
-    )
-    final_alerts.append(1 if votes >= 2 else 0)
+    inputs.append({
+        "net": int(net_alerts[i]),
+        "fraud": int(fraud_alerts[i]),
+        "logs": int(log_alerts[i]),
+        "anomaly": int(anomaly_alerts[i]),
+        "net_conf": float(test_probs[i])
+    })
 
-decisions = coordinator.decide(final_alerts, fraud_alerts, log_alerts)
+# ✅ Correct call
+decisions = coordinator.decide(inputs)
 
 # ================================
 # STEP 11: RESPONSE
@@ -250,4 +279,4 @@ responder.execute(decisions)
 # ================================
 # END
 # ================================
-print("\nPipeline execution completed")
+print("\n🚀 Pipeline execution completed")

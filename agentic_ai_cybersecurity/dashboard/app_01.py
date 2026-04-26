@@ -16,13 +16,16 @@ from agents.detection_agent import DetectionAgent
 from agents.ueba_agent import UEBAAgent
 from agents.anomaly_agent import AnomalyAgent
 
+import warnings
+warnings.filterwarnings("ignore")
+
 # ================================
 # CONFIG
 # ================================
 st.set_page_config(page_title="SOC Dashboard", layout="wide")
-st.title("🛡️ Agentic AI Cybersecurity SOC Dashboard")
+st.title("🛡️ AI-Powered SOC Dashboard")
 
-st_autorefresh(interval=2000, key="soc_refresh")
+st_autorefresh(interval=2000, key="refresh")
 
 # ================================
 # LOAD MODELS
@@ -55,30 +58,11 @@ if "data" not in st.session_state:
 # SIDEBAR
 # ================================
 st.sidebar.header("⚙️ Controls")
-
 run = st.sidebar.checkbox("▶ Enable Monitoring")
-
-threshold = st.sidebar.slider("Threshold", 0.1, 0.9, 0.3, step=0.01)
-
-st.sidebar.subheader("🔍 Filters")
-
-filter_status = st.sidebar.selectbox(
-    "Traffic", ["All", "Attacks Only", "Normal Only"]
-)
-
-filter_type = st.sidebar.multiselect(
-    "Attack Type",
-    ["DoS", "Probe", "R2L", "U2R", "Normal"],
-    default=["DoS", "Probe", "R2L", "U2R", "Normal"]
-)
-
-prob_range = st.sidebar.slider("Probability", 0.0, 1.0, (0.0, 1.0))
-
-search_ip = st.sidebar.text_input("Search IP")
-time_filter = st.sidebar.slider("Last Minutes", 1, 60, 10)
+threshold = st.sidebar.slider("Threat Threshold", 0.1, 0.9, 0.3)
 
 # ================================
-# GEO
+# GEO + IP
 # ================================
 geo_cache = {}
 
@@ -90,16 +74,13 @@ def generate_ip():
 def get_geo(ip):
     if ip in geo_cache:
         return geo_cache[ip]
-
     try:
         r = requests.get(f"http://ip-api.com/json/{ip}", timeout=1).json()
         if r["status"] == "success":
-            res = (r["country"], r["lat"], r["lon"])
-            geo_cache[ip] = res
-            return res
+            geo_cache[ip] = (r["country"], r["lat"], r["lon"])
+            return geo_cache[ip]
     except:
         pass
-
     return ("India", 12.97, 77.59)
 
 # ================================
@@ -118,38 +99,12 @@ def severity(prob, an):
     if an > 0.6: return "MEDIUM"
     return "LOW"
 
-def apply_filters(df):
-    if df.empty:
-        return df
-
-    cutoff = pd.Timestamp.now() - pd.Timedelta(minutes=time_filter)
-
-    if "Time" in df.columns:
-        df = df[df["Time"] >= cutoff]
-
-    if filter_status == "Attacks Only" and "Final" in df.columns:
-        df = df[df["Final"] == 1]
-    elif filter_status == "Normal Only" and "Final" in df.columns:
-        df = df[df["Final"] == 0]
-
-    if "Type" in df.columns:
-        df = df[df["Type"].isin(filter_type)]
-
-    if "Prob" in df.columns:
-        df = df[(df["Prob"] >= prob_range[0]) & (df["Prob"] <= prob_range[1])]
-
-    if search_ip and "IP" in df.columns:
-        df = df[df["IP"].str.contains(search_ip)]
-
-    return df
-
 # ================================
-# REAL-TIME DATA
+# DATA GENERATION
 # ================================
 if run:
-    for _ in range(10):
+    for _ in range(8):
         sample = np.random.rand(78)
-
         X = selector.transform(scaler.transform(sample.reshape(1, -1)))
         X = pd.DataFrame(X)
 
@@ -176,80 +131,93 @@ if run:
             "lon": lon
         })
 
-    if len(st.session_state.data) > 500:
-        st.session_state.data = st.session_state.data[-500:]
+    if len(st.session_state.data) > 300:
+        st.session_state.data = st.session_state.data[-300:]
 
 # ================================
-# DATA
+# DATAFRAME
 # ================================
 df = pd.DataFrame(st.session_state.data)
 
 if df.empty:
-    st.warning("👈 Enable Monitoring from sidebar to start")
+    st.info("👈 Enable Monitoring to start SOC system")
     st.stop()
 
-f = apply_filters(df)
+# ================================
+# KPI PANEL
+# ================================
+col1, col2, col3, col4 = st.columns(4)
+
+attacks = int((df["Final"] == 1).sum())
+normal = int((df["Final"] == 0).sum())
+countries = df["Country"].nunique()
+risk_score = round(df["Prob"].mean(), 2)
+
+col1.metric("🚨 Attacks", attacks)
+col2.metric("✅ Normal", normal)
+col3.metric("🌍 Countries", countries)
+col4.metric("🎯 Risk Score", risk_score)
 
 # ================================
-# KPI
+# ALERT FEED (SOC STYLE)
 # ================================
-c1, c2, c3 = st.columns(3)
-c1.metric("Attacks", int((f["Final"]==1).sum()) if "Final" in f.columns else 0)
-c2.metric("Normal", int((f["Final"]==0).sum()) if "Final" in f.columns else 0)
-c3.metric("Countries", f["Country"].nunique() if "Country" in f.columns else 0)
+st.subheader("🚨 Live Threat Feed")
 
-# ================================
-# TABLE
-# ================================
-st.subheader("Logs")
-st.dataframe(f.tail(20), width="stretch")
+latest = df.sort_values("Time", ascending=False).head(10)
+
+for _, row in latest.iterrows():
+    if row["Severity"] == "CRITICAL":
+        st.error(f"🔴 {row['IP']} | {row['Type']} | {row['Country']}")
+    elif row["Severity"] == "HIGH":
+        st.warning(f"🟠 {row['IP']} | {row['Type']} | {row['Country']}")
+    else:
+        st.info(f"🟢 {row['IP']} | {row['Type']}")
 
 # ================================
 # MAP
 # ================================
-st.subheader("Global Map")
-if "lat" in f.columns and "lon" in f.columns:
-    st.map(f[["lat","lon"]])
+st.subheader("🌍 Global Attack Map")
+st.map(df[["lat","lon"]])
 
 # ================================
 # CHARTS
 # ================================
-col1, col2, col3 = st.columns(3)
+c1, c2, c3 = st.columns(3)
 
-with col1:
+with c1:
     st.subheader("Attack Types")
-    if "Type" in f.columns:
-        st.bar_chart(f["Type"].value_counts())
+    st.bar_chart(df["Type"].value_counts())
 
-with col2:
-    st.subheader("Attack vs Normal")
-    if "Final" in f.columns:
-        st.bar_chart(f["Final"].value_counts())
-
-with col3:
+with c2:
     st.subheader("Severity")
-    if "Severity" in f.columns:
-        st.bar_chart(f["Severity"].value_counts())
+    st.bar_chart(df["Severity"].value_counts())
+
+with c3:
+    st.subheader("Attack vs Normal")
+    st.bar_chart(df["Final"].value_counts())
 
 # ================================
 # TIME TREND
 # ================================
-st.subheader("⏱ Time Trend")
-if "Time" in f.columns and "Final" in f.columns:
-    trend = f.set_index("Time").resample("1min")["Final"].sum()
-    st.line_chart(trend)
+st.subheader("📈 Attack Trend")
+trend = df.set_index("Time").resample("1min")["Final"].sum()
+st.line_chart(trend)
 
 # ================================
 # SCATTER
 # ================================
-st.subheader("Confidence vs Anomaly")
-if "Prob" in f.columns and "Anomaly" in f.columns:
-    st.scatter_chart(f[["Prob","Anomaly"]])
+st.subheader("🔍 Detection Confidence vs Anomaly")
+st.scatter_chart(df[["Prob","Anomaly"]])
 
 # ================================
 # TOP IPs
 # ================================
-st.subheader("Top Risky IPs")
-if "IP" in f.columns and "Final" in f.columns:
-    risky = f.groupby("IP")["Final"].sum().sort_values(ascending=False).head(5)
-    st.bar_chart(risky)
+st.subheader("🔥 Top Attackers")
+top = df.groupby("IP")["Final"].sum().sort_values(ascending=False).head(5)
+st.bar_chart(top)
+
+# ================================
+# TABLE
+# ================================
+st.subheader("📜 Logs")
+st.dataframe(df.tail(20), width="stretch")
