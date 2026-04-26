@@ -20,9 +20,9 @@ from agents.anomaly_agent import AnomalyAgent
 # CONFIG
 # ================================
 st.set_page_config(page_title="SOC Dashboard", layout="wide")
-st.title("🔴 AI Cybersecurity SOC Dashboard (Real-Time SOC)")
+st.title("Agentic AI Cybersecurity SOC Dashboard")
 
-# 🔥 AUTO REFRESH (2 sec)
+# AUTO REFRESH (2 sec)
 st_autorefresh(interval=2000, key="soc_refresh")
 
 # ================================
@@ -80,7 +80,7 @@ prob_range = st.sidebar.slider(
     step=0.01
 )
 
-search_ip = st.sidebar.text_input("🔎 Search IP")
+search_ip = st.sidebar.text_input("Search IP")
 time_filter = st.sidebar.slider("Last Minutes", 1, 60, 10)
 
 # ================================
@@ -146,11 +146,11 @@ def apply_filters(df):
     return df
 
 # ================================
-# 🔥 REAL-TIME DATA GENERATION
+# REAL-TIME DATA GENERATION
 # ================================
 if run:
 
-    for _ in range(10):  # 🔥 multiple points per refresh
+    for _ in range(10):  # multiple points per refresh
 
         sample = np.random.rand(78)
 
@@ -181,7 +181,7 @@ if run:
             "lon": lon
         })
 
-    # 🔥 limit memory
+    # limit memory
     if len(st.session_state.data) > 500:
         st.session_state.data = st.session_state.data[-500:]
 
@@ -192,7 +192,7 @@ df = pd.DataFrame(st.session_state.data)
 f = apply_filters(df)
 
 # ================================
-# 🔥 TOP PIE
+# TOP PIE
 # ================================
 if not f.empty:
 
@@ -210,20 +210,20 @@ if not f.empty:
 # KPI
 # ================================
 c1, c2, c3 = st.columns(3)
-c1.metric("🚨 Attacks", int((f["Final"]==1).sum()) if not f.empty else 0)
-c2.metric("✅ Normal", int((f["Final"]==0).sum()) if not f.empty else 0)
-c3.metric("🌍 Countries", f["Country"].nunique() if not f.empty else 0)
+c1.metric("Attacks", int((f["Final"]==1).sum()) if not f.empty else 0)
+c2.metric("Normal", int((f["Final"]==0).sum()) if not f.empty else 0)
+c3.metric("Countries", f["Country"].nunique() if not f.empty else 0)
 
 # ================================
 # TABLE
 # ================================
-st.subheader("📋 Logs")
+st.subheader("Logs")
 st.dataframe(f.tail(20), use_container_width=True)
 
 # ================================
 # MAP
 # ================================
-st.subheader("🌍 Global Map")
+st.subheader("Global Map")
 if not f.empty:
     st.map(f[["lat","lon"]])
 
@@ -255,14 +255,14 @@ if not f.empty:
 # ================================
 # SCATTER
 # ================================
-st.subheader("🧠 Confidence vs Anomaly")
+st.subheader("Confidence vs Anomaly")
 if not f.empty:
     st.scatter_chart(f[["Prob","Anomaly"]])
 
 # ================================
 # TOP IPs
 # ================================
-st.subheader("📊 Top Risky IPs")
+st.subheader("Top Risky IPs")
 if not f.empty:
     risky = f.groupby("IP")["Final"].sum().sort_values(ascending=False).head(5)
     st.bar_chart(risky)

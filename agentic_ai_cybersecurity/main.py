@@ -205,7 +205,7 @@ test_data = pd.concat([
     pd.DataFrame(normal_samples)
 ])
 
-# 🔥 FIXED (NO .values)
+#FIXED (NO .values)
 test_probs = detector.predict_proba(test_data)
 net_alerts = (test_probs >= best_threshold).astype(int)
 
@@ -217,7 +217,7 @@ except:
     print("⚠️ Transformer skipped")
     log_alerts = np.zeros(len(test_data))
 
-# 🔥 FIXED
+#FIXED
 anomaly_alerts = anomaly.detect(test_data)
 
 # ================================
