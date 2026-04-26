@@ -1,0 +1,15 @@
+pandas
+numpy
+scikit-learn
+tensorflow
+torch
+transformers
+gym
+matplotlib
+imbalanced-learn
+xgboost
+streamlit
+watchdog
+shap
+plotly
+streamlit-autorefresh

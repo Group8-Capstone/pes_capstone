@@ -1,0 +1,5 @@
+DATA_PATH = "data/"
+OUTPUT_PATH = "outputs/"
+MODEL_EPOCHS = 3
+TEST_SIZE = 0.2
+RANDOM_STATE = 42
