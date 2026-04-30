@@ -42,7 +42,7 @@ class InvestigationAgent:
         logs = logs.select_dtypes(include=[np.number]).fillna(0)
 
         input_dim = logs.shape[1]
-        print(f"✅ Log feature count: {input_dim}")
+        print(f"Log feature count: {input_dim}")
 
         # save column structure
         joblib.dump(logs.columns.tolist(), self.columns_path)
@@ -55,7 +55,7 @@ class InvestigationAgent:
         with torch.no_grad():
             _ = self.model(X)
 
-        print("✅ Transformer initialized & trained")
+        print("Transformer initialized & trained")
 
     # ================================
     # PREPROCESS INPUT

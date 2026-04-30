@@ -20,7 +20,7 @@ from agents.anomaly_agent import AnomalyAgent
 # CONFIG
 # ================================
 st.set_page_config(page_title="SOC Dashboard", layout="wide")
-st.title("🛡️ Agentic AI Cybersecurity SOC Dashboard")
+st.title("Agentic AI Cybersecurity SOC Dashboard")
 
 st_autorefresh(interval=2000, key="soc_refresh")
 

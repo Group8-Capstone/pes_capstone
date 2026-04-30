@@ -4,7 +4,7 @@ class StreamGenerator:
 
     def __init__(self, X_net, logs):
 
-        # 🔥 Ensure DataFrame
+        # Ensure DataFrame
         if not isinstance(X_net, pd.DataFrame):
             X_net = pd.DataFrame(X_net)
 

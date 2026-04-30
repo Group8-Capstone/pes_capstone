@@ -73,11 +73,11 @@ X_train, X_test, y_train, y_test = train_test_split(
 
 print("Split complete")
 
-# 🔥 SAVE TEST DATA FOR REAL-TIME STREAMING (IMPORTANT)
+# SAVE TEST DATA FOR REAL-TIME STREAMING (IMPORTANT)
 pd.DataFrame(X_test).to_csv("outputs/test_stream.csv", index=False)
 pd.DataFrame(y_test).to_csv("outputs/test_labels.csv", index=False)
 
-print("✅ Test stream data saved for dashboard")
+print("Test stream data saved for dashboard")
 
 # ================================
 # SCALE
@@ -93,7 +93,7 @@ selector = SelectKBest(score_func=f_classif, k=30)
 X_train = selector.fit_transform(X_train, y_train)
 X_test = selector.transform(X_test)
 
-# 🔥 SAVE PREPROCESSING (IMPORTANT)
+# SAVE PREPROCESSING (IMPORTANT)
 joblib.dump(scaler, "outputs/models/scaler.pkl")
 joblib.dump(selector, "outputs/models/selector.pkl")
 
@@ -103,7 +103,7 @@ joblib.dump(selector, "outputs/models/selector.pkl")
 feature_names = [f"f{i}" for i in range(X_train.shape[1])]
 joblib.dump(feature_names, "outputs/models/feature_names.pkl")
 
-print(f"✅ Saved {len(feature_names)} feature names")
+print(f" Saved {len(feature_names)} feature names")
 
 # ================================
 # STEP 3: BALANCE DATA
@@ -122,7 +122,7 @@ print_section("Training Anomaly Model")
 anomaly = AnomalyAgent()
 anomaly.train(X_train)
 
-# 🔥 SAVE MODEL
+# SAVE MODEL
 anomaly.save("outputs/models/anomaly_model.pkl")
 
 print("Anomaly model trained & saved")
@@ -131,13 +131,13 @@ print("Anomaly model trained & saved")
 # ================================
 # STEP 5: INITIALIZE AGENTS
 # ================================
-memory = AgentMemory()   # 🔥 ADD THIS
+memory = AgentMemory()   
 
 detector = DetectionAgent()
 ueba = UEBAAgent()
 investigator = InvestigationAgent()
 
-coordinator = CoordinatorAgent(memory)   # 🔥 FIXED
+coordinator = CoordinatorAgent(memory)  
 responder = ResponseAgent()
 
 # ================================
@@ -240,7 +240,7 @@ log_sample = logs.sample(len(test_data), replace=True)
 try:
     log_alerts = investigator.analyze(log_sample)
 except Exception as e:
-    print("⚠️ Transformer error:", e)
+    print("Transformer error:", e)
     log_alerts = np.zeros(len(test_data))
 
 # ================================
@@ -266,7 +266,7 @@ for i in range(min_len):
         "net_conf": float(test_probs[i])
     })
 
-# ✅ Correct call
+# Correct call
 decisions = coordinator.decide(inputs)
 
 # ================================
@@ -279,4 +279,4 @@ responder.execute(decisions)
 # ================================
 # END
 # ================================
-print("\n🚀 Pipeline execution completed")
+print("\n Pipeline execution completed")

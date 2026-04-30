@@ -23,7 +23,7 @@ from agents.anomaly_agent import AnomalyAgent
 # CONFIG
 # ================================
 st.set_page_config(page_title="Enterprise SOC", layout="wide")
-st.title("🛡️ Enterprise AI SOC Dashboard")
+st.title("Enterprise AI SOC Dashboard")
 
 st_autorefresh(interval=2000, key="soc_refresh")
 
@@ -74,9 +74,9 @@ if "pointer" not in st.session_state:
 # ================================
 # SIDEBAR
 # ================================
-st.sidebar.header("⚙️ SOC Controls")
+st.sidebar.header("SOC Controls")
 
-run = st.sidebar.toggle("▶ Live Monitoring", True)
+run = st.sidebar.toggle("Live Monitoring", True)
 threshold = st.sidebar.slider("Threat Threshold", 0.1, 0.9, 0.5)
 
 # ================================
@@ -119,7 +119,7 @@ if run:
 
         for _ in range(5):
 
-            # 🔥 loop over real dataset
+            # loop over real dataset
             row = stream_df.iloc[st.session_state.pointer % len(stream_df)]
             st.session_state.pointer += 1
 
@@ -157,7 +157,7 @@ if run:
             })
 
     else:
-        # 🔥 FALLBACK DATA (prevents blank screen)
+        # FALLBACK DATA (prevents blank screen)
         st.warning("⚠️ No stream data found → using dummy data")
 
         for _ in range(3):
@@ -190,15 +190,15 @@ if df.empty:
 # ================================
 c1, c2, c3, c4 = st.columns(4)
 
-c1.metric("🚨 Threats", int((df["Decision"]=="BLOCK").sum()))
-c2.metric("✅ Allowed", int((df["Decision"]=="ALLOW").sum()))
-c3.metric("🌍 Countries", df["Country"].nunique())
-c4.metric("🎯 Avg Risk", round(df["Score"].mean(), 2))
+c1.metric("Threats", int((df["Decision"]=="BLOCK").sum()))
+c2.metric("Allowed", int((df["Decision"]=="ALLOW").sum()))
+c3.metric("Countries", df["Country"].nunique())
+c4.metric("Avg Risk", round(df["Score"].mean(), 2))
 
 # ================================
 # ALERT FEED
 # ================================
-st.subheader("🚨 Live SOC Alerts")
+st.subheader("Live SOC Alerts")
 
 for _, row in df.sort_values("Time", ascending=False).head(6).iterrows():
     msg = f"{row['IP']} | {row['Type']} | Score={round(row['Score'],2)}"
@@ -213,7 +213,7 @@ for _, row in df.sort_values("Time", ascending=False).head(6).iterrows():
 # ================================
 # MAP
 # ================================
-st.subheader("🌍 Global Threat Map")
+st.subheader("Global Threat Map")
 st.map(df[["lat","lon"]])
 
 # ================================
@@ -236,7 +236,7 @@ with col3:
 # ================================
 # TREND
 # ================================
-st.subheader("📈 Threat Trend")
+st.subheader("Threat Trend")
 trend = df.set_index("Time").resample("1min")["Score"].mean()
 st.line_chart(trend)
 

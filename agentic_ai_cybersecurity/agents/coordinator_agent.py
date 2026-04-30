@@ -45,7 +45,7 @@ class CoordinatorAgent:
                 0.2 * data["anomaly"]
             )
 
-            # 🔥 MEMORY READ ONLY
+            # MEMORY READ ONLY
             recent_events = self.memory.get_recent_events(5)
 
             if any(e.get("decision") == "BLOCK" for e in recent_events):

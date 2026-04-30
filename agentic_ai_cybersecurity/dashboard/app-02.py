@@ -23,7 +23,7 @@ from agents.anomaly_agent import AnomalyAgent
 # CONFIG
 # ================================
 st.set_page_config(page_title="Enterprise SOC", layout="wide")
-st.title("🛡️ Enterprise AI SOC Dashboard")
+st.title("Enterprise AI SOC Dashboard")
 
 st_autorefresh(interval=2000, key="soc_refresh")
 
@@ -111,15 +111,15 @@ if run:
 
     for _ in range(6):
 
-        # 🔥 REAL DATA STREAM
+        # REAL DATA STREAM
         row = stream_df.sample(1)
         X_raw = row.copy().reset_index(drop=True)
 
-        # 🔥 Fix feature names
+        # Fix feature names
         if hasattr(scaler, "feature_names_in_"):
             X_raw.columns = scaler.feature_names_in_
 
-        # 🔥 PIPELINE
+        # PIPELINE
         X_scaled = scaler.transform(X_raw)
         X_sel = selector.transform(X_scaled)
         X_sel = pd.DataFrame(X_sel)
@@ -131,7 +131,7 @@ if run:
         fraud = ueba.detect(X_sel)[0]
         an = anomaly.detect(X_sel)[0]
 
-        # 🔥 AGENTIC SCORE
+        # AGENTIC SCORE
         score = 0.5*prob + 0.2*fraud + 0.3*an
         decision = "BLOCK" if score > threshold else "ALLOW"
 
@@ -173,30 +173,30 @@ if df.empty:
 # ================================
 c1, c2, c3, c4 = st.columns(4)
 
-c1.metric("🚨 Threats", int((df["Decision"]=="BLOCK").sum()))
-c2.metric("✅ Allowed", int((df["Decision"]=="ALLOW").sum()))
-c3.metric("🌍 Countries", df["Country"].nunique())
-c4.metric("🎯 Avg Risk", round(df["Score"].mean(), 2))
+c1.metric("Threats", int((df["Decision"]=="BLOCK").sum()))
+c2.metric("Allowed", int((df["Decision"]=="ALLOW").sum()))
+c3.metric("Countries", df["Country"].nunique())
+c4.metric("Avg Risk", round(df["Score"].mean(), 2))
 
 # ================================
 # ALERT FEED
 # ================================
-st.subheader("🚨 Live SOC Alerts")
+st.subheader("Live SOC Alerts")
 
 for _, row in df.sort_values("Time", ascending=False).head(8).iterrows():
     msg = f"{row['IP']} | {row['Type']} | Score={round(row['Score'],2)}"
 
     if row["Severity"] == "CRITICAL":
-        st.error("🔴 " + msg)
+        st.error("Error" + msg)
     elif row["Severity"] == "HIGH":
-        st.warning("🟠 " + msg)
+        st.warning("Warning" + msg)
     else:
-        st.info("🟢 " + msg)
+        st.info("Info " + msg)
 
 # ================================
 # INVESTIGATION PANEL
 # ================================
-st.subheader("🧠 Investigation Panel")
+st.subheader("Investigation Panel")
 
 latest = df.iloc[-1]
 
@@ -214,7 +214,7 @@ st.write(f"Anomaly Score: {latest['Anomaly']}")
 # ================================
 # MAP
 # ================================
-st.subheader("🌍 Global Threat Map")
+st.subheader("Global Threat Map")
 st.map(df[["lat","lon"]])
 
 # ================================
@@ -237,12 +237,12 @@ with col3:
 # ================================
 # TREND
 # ================================
-st.subheader("📈 Threat Trend")
+st.subheader("Threat Trend")
 trend = df.set_index("Time").resample("1min")["Score"].mean()
 st.line_chart(trend)
 
 # ================================
 # TABLE
 # ================================
-st.subheader("📜 Event Logs")
+st.subheader("Event Logs")
 st.dataframe(df.tail(20), width="stretch")

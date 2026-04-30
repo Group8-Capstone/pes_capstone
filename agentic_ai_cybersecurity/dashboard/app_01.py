@@ -23,7 +23,7 @@ warnings.filterwarnings("ignore")
 # CONFIG
 # ================================
 st.set_page_config(page_title="SOC Dashboard", layout="wide")
-st.title("🛡️ AI-Powered SOC Dashboard")
+st.title("AI-Powered SOC Dashboard")
 
 st_autorefresh(interval=2000, key="refresh")
 
@@ -153,15 +153,15 @@ normal = int((df["Final"] == 0).sum())
 countries = df["Country"].nunique()
 risk_score = round(df["Prob"].mean(), 2)
 
-col1.metric("🚨 Attacks", attacks)
-col2.metric("✅ Normal", normal)
-col3.metric("🌍 Countries", countries)
-col4.metric("🎯 Risk Score", risk_score)
+col1.metric("Attacks", attacks)
+col2.metric("Normal", normal)
+col3.metric("Countries", countries)
+col4.metric("Risk Score", risk_score)
 
 # ================================
 # ALERT FEED (SOC STYLE)
 # ================================
-st.subheader("🚨 Live Threat Feed")
+st.subheader("Live Threat Feed")
 
 latest = df.sort_values("Time", ascending=False).head(10)
 
@@ -176,7 +176,7 @@ for _, row in latest.iterrows():
 # ================================
 # MAP
 # ================================
-st.subheader("🌍 Global Attack Map")
+st.subheader("Global Attack Map")
 st.map(df[["lat","lon"]])
 
 # ================================
@@ -199,25 +199,25 @@ with c3:
 # ================================
 # TIME TREND
 # ================================
-st.subheader("📈 Attack Trend")
+st.subheader("Attack Trend")
 trend = df.set_index("Time").resample("1min")["Final"].sum()
 st.line_chart(trend)
 
 # ================================
 # SCATTER
 # ================================
-st.subheader("🔍 Detection Confidence vs Anomaly")
+st.subheader("Detection Confidence vs Anomaly")
 st.scatter_chart(df[["Prob","Anomaly"]])
 
 # ================================
 # TOP IPs
 # ================================
-st.subheader("🔥 Top Attackers")
+st.subheader("Top Attackers")
 top = df.groupby("IP")["Final"].sum().sort_values(ascending=False).head(5)
 st.bar_chart(top)
 
 # ================================
 # TABLE
 # ================================
-st.subheader("📜 Logs")
+st.subheader("Logs")
 st.dataframe(df.tail(20), width="stretch")
